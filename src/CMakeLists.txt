@@ -5,6 +5,7 @@ add_library(cuda_ml_kernels
     cuda/matrixMultiplication.cu
     cuda/vectorAddition.cu
     cuda/matrixTranspose.cu
+    cuda/1dConvolution.cu
 )
 
 # Set include directories
