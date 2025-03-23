@@ -2,7 +2,9 @@
 add_library(cuda_ml_kernels
     cuda/attention.cu
     cuda/transformer.cu
-    cuda/
+    cuda/matrixMultiplication.cu
+    cuda/vectorAddition.cu
+    cuda/matrixTranspose.cu
 )
 
 # Set include directories
