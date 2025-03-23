@@ -2,6 +2,7 @@
 add_library(cuda_ml_kernels
     cuda/attention.cu
     cuda/transformer.cu
+    cuda/
 )
 
 # Set include directories
