@@ -1,7 +1,10 @@
 torch>=2.0.0
-numpy>=1.21.0
+numpy>=1.20.0
 pytest>=7.0.0
 scipy>=1.7.0
 matplotlib>=3.5.0
 tqdm>=4.65.0
-pandas>=1.5.0 
+pandas>=1.5.0
+pycuda>=2022.1
+setuptools>=65.0.0
+wheel>=0.38.0 

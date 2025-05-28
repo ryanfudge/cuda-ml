@@ -1,23 +1,41 @@
-# Find GTest
+# Find GTest package
 find_package(GTest REQUIRED)
 
-# Add test executable
-add_executable(attention_test
-    test_attention.cu
+# Add test executables
+add_executable(attention_test test_attention.cu)
+add_executable(test_transformer test_transformer.cu)
+
+# Set include directories
+target_include_directories(attention_test PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${GTEST_INCLUDE_DIRS}
 )
 
-# Set CUDA properties
-set_target_properties(attention_test PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
+target_include_directories(test_transformer PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${GTEST_INCLUDE_DIRS}
 )
 
-# Link against GTest and our CUDA kernels
+# Link against libraries
 target_link_libraries(attention_test
-    PRIVATE
     cuda_ml_kernels
     GTest::GTest
     GTest::Main
+    cudart
+    cublas
+    cublasLt
 )
 
-# Add test to CTest
-add_test(NAME attention_test COMMAND attention_test) 
+target_link_libraries(test_transformer
+    cuda_ml
+    cuda_ml_kernels
+    GTest::GTest
+    GTest::Main
+    cudart
+    cublas
+    cublasLt
+)
+
+# Add tests to CTest
+add_test(NAME attention_test COMMAND attention_test)
+add_test(NAME test_transformer COMMAND test_transformer) 

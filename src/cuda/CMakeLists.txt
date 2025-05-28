@@ -13,13 +13,22 @@ set(CUDA_HEADERS
     transformer_model.h
 )
 
+# Set CUDA architecture before enabling CUDA
+set(CMAKE_CUDA_ARCHITECTURES 86)
+
+# Enable CUDA
+enable_language(CUDA)
+
+# Find CUDA package
+find_package(CUDAToolkit REQUIRED)
+
 # Create CUDA library
-cuda_add_library(cuda_ml ${CUDA_SOURCES} ${CUDA_HEADERS})
+add_library(cuda_ml SHARED ${CUDA_SOURCES} ${CUDA_HEADERS})
 
 # Set include directories
 target_include_directories(cuda_ml PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTOR}
+    ${CUDAToolkit_INCLUDE_DIRS}
 )
 
 # Set CUDA specific flags
@@ -30,7 +39,6 @@ set_target_properties(cuda_ml PROPERTIES
 # Add CUDA specific flags
 target_compile_options(cuda_ml PRIVATE
     -O3
-    -arch=sm_60
     --use_fast_math
     -std=c++14
 )

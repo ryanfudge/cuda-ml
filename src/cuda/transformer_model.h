@@ -79,6 +79,18 @@ public:
     // Memory management
     void allocate_kv_cache(int max_batch_size);
     void free_kv_cache();
+
+    // Attention forward pass (made public for testing)
+    void attention_forward(
+        const float* query,
+        const float* key,
+        const float* value,
+        float* output,
+        int batch_size,
+        int seq_len,
+        int head_dim,
+        bool use_cache = false
+    );
     
 private:
     TransformerConfig config_;
@@ -90,24 +102,13 @@ private:
     
     // Helper functions
     void initialize_weights();
-    void forward_layer(
+    cudaError_t forward_layer(
         const float* input,
         float* output,
         const TransformerWeights::LayerWeights& layer_weights,
         int batch_size,
         int seq_len,
-        bool use_cache = false
-    );
-    
-    void attention_forward(
-        const float* query,
-        const float* key,
-        const float* value,
-        float* output,
-        int batch_size,
-        int seq_len,
-        int head_dim,
-        bool use_cache = false
+        bool use_cache
     );
     
     void mlp_forward(

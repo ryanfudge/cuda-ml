@@ -89,31 +89,65 @@ __global__ void top_k_sampling_kernel(
     int k,
     float random_value
 ) {
+    __shared__ float normalized_probs[1024];  // Assuming vocab size <= 1024
+    
     // This is a simplified version. In practice, you'd want to use a more efficient
     // implementation with parallel reduction and sorting
     if (threadIdx.x == 0) {
         float sum = 0.0f;
-        float threshold = 0.0f;
         
-        // Find the k-th largest probability
+        // Compute sum and copy probabilities
         for (int i = 0; i < vocab_size; i++) {
+            normalized_probs[i] = probs[i];
             sum += probs[i];
         }
         
         // Normalize probabilities
         for (int i = 0; i < vocab_size; i++) {
-            probs[i] /= sum;
+            normalized_probs[i] /= sum;
         }
         
         // Simple sampling (not efficient for large vocabularies)
         float cumsum = 0.0f;
         for (int i = 0; i < vocab_size; i++) {
-            cumsum += probs[i];
+            cumsum += normalized_probs[i];
             if (cumsum >= random_value) {
                 *output = i;
                 break;
             }
         }
+    }
+}
+
+// Kernel for logits projection
+__global__ void logits_projection_kernel(
+    const float* hidden_states,
+    const float* final_ln_weight,
+    const float* final_ln_bias,
+    const float* lm_head,
+    float* logits,
+    int batch_size,
+    int hidden_dim,
+    int vocab_size
+) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < batch_size * vocab_size) {
+        int batch_idx = idx / vocab_size;
+        int vocab_idx = idx % vocab_size;
+        
+        // Apply final layer norm
+        float normed = 0.0f;
+        for (int i = 0; i < hidden_dim; i++) {
+            float val = hidden_states[batch_idx * hidden_dim + i];
+            normed += val * final_ln_weight[i] + final_ln_bias[i];
+        }
+        
+        // Project to vocabulary
+        float logit = 0.0f;
+        for (int i = 0; i < hidden_dim; i++) {
+            logit += normed * lm_head[i * vocab_size + vocab_idx];
+        }
+        logits[idx] = logit;
     }
 }
 
@@ -173,7 +207,16 @@ void TransformerModel::generate(
         }
         
         // Project to vocabulary
-        // TODO: Implement logits projection
+        logits_projection_kernel<<<(batch_size * config_.vocab_size + 255) / 256, 256, 0, stream_>>>(
+            hidden_states + config_.num_layers * batch_size * (seq_len + i) * config_.hidden_dim,
+            weights_.final_ln_weight,
+            weights_.final_ln_bias,
+            weights_.token_embedding,  // Using token embedding as language model head
+            logits,
+            batch_size,
+            config_.hidden_dim,
+            config_.vocab_size
+        );
         
         // Convert logits to probabilities
         logits_to_probs_kernel<<<(config_.vocab_size + 255) / 256, 256, 0, stream_>>>(
