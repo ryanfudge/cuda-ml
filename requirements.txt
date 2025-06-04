@@ -7,4 +7,4 @@ tqdm>=4.65.0
 pandas>=1.5.0
 pycuda>=2022.1
 setuptools>=65.0.0
-wheel>=0.38.0 
+wheel>=0.38.0
